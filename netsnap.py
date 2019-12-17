@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # netsnapshot.py - network monitoring with scapy and python pandas
-# Release Version:  Alpha Beta
-# Release Date: 11/22/19
+# Release Version:  Aloha Boeing
+# Release Date: 12.16.19
 
 from typing import Any, Union
 
@@ -36,7 +36,7 @@ localbroadcast = cmdline("ifconfig | grep broadcast | awk ' { print $6 }'").deco
 
 
 # define length
-packets = sniff(count=300)
+packets = sniff(count=10)
 
 wrpcap("/tmp/filename2.pcap", packets)
 
@@ -70,95 +70,63 @@ for packet in scapy_cap:
 
     elif ( PT == 2054):
         print("ARP!")
+        df = pd.DataFrame({
+            "Source": ["ARP"],
+            "Destination": ["ARP"],
+            "Destport": ["ARP"],
+            "Sourceport": ["ARP"],
+            "Size": ["ARP"],
+        })
 
-    df.to_csv('/tmp/fullcapture.csv', mode='a',  sep='\t', header=False)
+    df.to_csv('/tmp/fullcapture.csv', mode='a',  sep=',', header=False, index=False)
 
-#add header to fullcapture csv
+#
+#
+####add header to fullcapture csv
 col_Names=['Source', 'Destination', 'Destport', 'Sourceport', 'Size']
-Cov = pd.read_csv("/tmp/fullcapture.csv",  sep='\t', names=col_Names)
+Cov = pd.read_csv("/tmp/fullcapture.csv",  sep=',', names=col_Names)
+Cov.to_csv("/tmp/addedheaders.csv")
+foobar = pd.read_csv("/tmp/addedheaders.csv", sep=',')
 
 
-print(localbroadcast)
+###
+# Grab unique addresses
+###
+
+unique_sources = foobar["Source"]
+unique_sources = unique_sources.drop_duplicates()
+print(unique_sources)
+
+unique_destinations = foobar["Destination"]
+unique_destinations = unique_destinations.drop_duplicates()
+print(unique_destinations)
+
+###
+# define function to extract values
+
+
+
+
+
+
+
+
+####
+#
+###
+###
+# Get list containing our current IP's
+###
 local_system_ips = (Convert(local_system_ip))
-myarray = np.asarray(local_system_ips)
-
-
-
-print("our local system IP's are {}".format(myarray))
-
-#remove packets addressed to broadcast address
-# THIS IS not working, so replace it with a for loop 
-# This is necessary because we also have to SUM each individual IP
-#Cov1 = Cov[Cov.Destination != (localbroadcast) ]
-#Cov1.to_csv('/tmp/withoutbroadcasts.csv')
-
-#Cov2 = Cov.loc[Cov['Destination'].isin([(myarray)])]
-#Cov2.to_csv('/tmp/cov2.csv')
-
-
-#inboundtraffic = Cov1.loc[Cov1['Source'].isin(local_system_ips)]
-#inboundtraffic.to_csv=('/tmp/inboundwithoutlocal.csv')
+ouriplist = list(filter(None,local_system_ips))
 
 
 #
 #
 #
-#Tiny up our workspace...
-#
-#
-#
+#Tidy up.
 print("chmoding and moving csvs. . .")
 cmdline("cp /tmp/*csv /home/greenfan/Desktop/")
 cmdline("chmod 777 /home/greenfan/Desktop/*csv")
-print("clearing temp files. . . ")
-cmdline("rm -rf /tmp/*csv /tmp/*pcap")
-
-
-# Create a Dataframe from CSV
-#df1 = pd.read_csv('/tmp/headerdump.csv')
-
-#my_dataframe = my_dataframe[my_dataframe.employee_name != 'chad']
-
-# Create a Dataframe from CSV
-#    d1 = pd.read_csv('/tmp/fulldump.csv')
-
-    # Drop via logic: similar to SQL 'WHERE' clause
-#    d1 = d1(d1.Destination != '192.168.0.255')
-
-#    d1.to_csv('/tmp/dumpwithoutbroadcasts/csv', mode='a', header=False)
-    #print(df.loc[df['Destination'].isin(['192.168.0.255'])])
-
-
-
-
-#    df1.to_csv('/tmp/notbroadcasted.csv', mode='a', header=False)
-#
-
-
-
-# remove broadcast from Dest column
-#fulldump = pd.read_csv('/tmp/fulldump.csv')
-
-#df1 = df[~df['Dest'].str.contains('192.168.0.255')]
-
-#print(df1)
-#d1.to_csv('/tmp/d1.csv', mode='a', header=False)
-
-
-#df[df['Position'].str.contains("PG")]
-
-
-#ourlocalIP = os.system("ifconfig | grep -v 127 | grep inet\  | awk '{ print $2 }'")
-#, filter="not broadcast and not host {0}".format(localbroadcast)
-
-
-#Removed from middle
-
-#print(localbroadcast)
-#Cov1 = Cov[Cov.Destination != (localbroadcast) ]
-
-#Cov1.to_csv('/tmp/withoutbroadcasts.csv')
-
-#inboundsources = (Cov1['Source'])
-
-#outbounddestinations = (Cov1['Destination']et nu
+#print("clearing temp files. . . ")
+#cmdline("rm -rf /tmp/*csv /tmp/*pcap")
