@@ -37,7 +37,7 @@ localbroadcast = cmdline("ifconfig | grep broadcast | awk ' { print $6 }'").deco
 
 
 # define length
-packets = sniff(count=10)
+packets = sniff(count=100)
 
 wrpcap("/tmp/filename2.pcap", packets)
 
@@ -71,6 +71,7 @@ for packet in scapy_cap:
 
     elif ( PT == 2054):
         print("ARP!")
+        print(packet.summary)
         df = pd.DataFrame({
             "Source": ["ARP"],
             "Destination": ["ARP"],
@@ -84,12 +85,7 @@ for packet in scapy_cap:
 #
 #
 ####add header to fullcapture csv
-col_Names=['Source', 'Destination', 'Destport', 'Sourceport', 'Size']
-Cov = pd.read_csv("/tmp/fullcapture.csv",  sep=',', names=col_Names)
-Cov.to_csv("/tmp/addedheaders.csv")
-foobar = pd.read_csv("/tmp/addedheaders.csv", sep=',')
-
-
+foobar = pd.read_csv("/tmp/fullcapture.csv", sep=',', names=['Source', 'Destination', 'Destport', 'Sourceport', 'Size'])
 ###
 # Grab unique addresses
 ###
@@ -108,14 +104,14 @@ unique_destinations = unique_destinations.drop_duplicates()
 
 # define function to extract values
 
-for xyz in unique_sources:
+for src in unique_sources:
 
-
-        mask =  foobar["Source"] == "{}".format(xyz)
+    if src != "ARP":
+        mask =  foobar["Source"] == "{}".format(src)
         df = foobar[mask]
-        dfsize = df["Size"]
-        dfz = pd.DataFrame.sum(dfsize)
-        print("Received: {1:10} bytes from {0}".format(xyz, dfz))
+        dfsize = df["Size"].astype(int)
+        dfsum = pd.DataFrame.sum(dfsize)
+        print("Received: {1:10} bytes from {0}".format(src, dfsum))
 
 ####
 #
@@ -131,8 +127,9 @@ ouriplist = list(filter(None,local_system_ips))
 #
 #
 #Tidy up.
-print("chmoding and moving csv for debugging. . .")
+
 cmdline("cp /tmp/*csv /home/greenfan/Desktop/")
 cmdline("chmod 777 /home/greenfan/Desktop/*csv")
+print("pcap moved to desktop for deubgging")
 print("clearing temp files. . . ")
 cmdline("rm -rf /tmp/*csv /tmp/*pcap")
