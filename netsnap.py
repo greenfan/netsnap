@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 # netsnapshot.py - network monitoring with scapy and python pandas
-# Release Version:  Aloha Boeing
-# Release Date: 12.16.19
+# ultimately more resource friendly rework of nethogs
+# Release Version:  0.3.1
+# Revision date: 12/17/19
 
 from typing import Any, Union
 
@@ -95,21 +96,26 @@ foobar = pd.read_csv("/tmp/addedheaders.csv", sep=',')
 
 unique_sources = foobar["Source"]
 unique_sources = unique_sources.drop_duplicates()
-print(unique_sources)
+#print(unique_sources)
 
 unique_destinations = foobar["Destination"]
 unique_destinations = unique_destinations.drop_duplicates()
-print(unique_destinations)
+#print(unique_destinations)
 
 ###
 # define function to extract values
 
 
+# define function to extract values
+
+for xyz in unique_sources:
 
 
-
-
-
+        mask =  foobar["Source"] == "{}".format(xyz)
+        df = foobar[mask]
+        dfsize = df["Size"]
+        dfz = pd.DataFrame.sum(dfsize)
+        print("Received: {1:10} bytes from {0}".format(xyz, dfz))
 
 ####
 #
@@ -125,8 +131,8 @@ ouriplist = list(filter(None,local_system_ips))
 #
 #
 #Tidy up.
-print("chmoding and moving csvs. . .")
+print("chmoding and moving csv for debugging. . .")
 cmdline("cp /tmp/*csv /home/greenfan/Desktop/")
 cmdline("chmod 777 /home/greenfan/Desktop/*csv")
-#print("clearing temp files. . . ")
-#cmdline("rm -rf /tmp/*csv /tmp/*pcap")
+print("clearing temp files. . . ")
+cmdline("rm -rf /tmp/*csv /tmp/*pcap")
