@@ -2,17 +2,15 @@
 # netsnapshot.py - network monitoring with scapy and python pandas
 ###
 # Release Version:  0.3.1
-# Revision date: 12/17/19
+# Revision date: 12/18/19
 ###
 # netsnappy is a more resource friendly version of nethogs,
 # constructed with scapy and pandas doing the heavy lifting
 ###
 ###
-# Todos v.3.3 add destination, add filtering based on my_ips, add total received
-# v.4 instead of printing, set them to create a series, and sort by ascending sizes
+# v.4 clean up the list_2_remove and add option to remove broadcasts
 # v.5 add more recursion. . .
 #
-from typing import Any, Union
 
 from scapy.all import *
 import os
@@ -40,12 +38,24 @@ def Convert(string):
 #
 # begin local variables
 # undeclared variables are latent bugs
+
+#
 local_system_ip = cmdline(" ifconfig | grep -i inet | egrep -v \"fe80|::1|127.0.0\" | awk '{  print  $2 }' ").decode('ascii')
 localbroadcast = cmdline("ifconfig | grep broadcast | awk ' { print $6 }'").decode('ascii').strip()
+local_system_ips = (Convert(local_system_ip))
+ouriplist = list(filter(None,local_system_ips))
+list_2_remove = ouriplist
+
+
 packets = sniff(count=100)
+
 #
 # end local variables
 #
+####
+#####
+
+
 
 
 # take the capture
@@ -92,8 +102,6 @@ for packet in scapy_cap:
             })
 
     elif ( PT == 2054):
-        print("ARP!")
-        print(packet.summary)
         df = pd.DataFrame({
             "Source": ["ARP"],
             "Destination": ["ARP"],
@@ -121,19 +129,28 @@ unique_destinations = unique_destinations.drop_duplicates()
 #print(unique_destinations)
 
 ###
-# define function to extract values
 
 
-# define function to extract values
+sourcetable = pd.DataFrame({
+    "Source": [],
+    "Bytes_received": [],
+})
+
 
 for src in unique_sources:
-
     if src != "ARP":
-        mask =  foobar["Source"] == "{}".format(src)
+        mask = foobar["Source"] == "{}".format(src)
         df = foobar[mask]
         dfsize = df["Size"].astype(int)
         dfsum = pd.DataFrame.sum(dfsize)
-        print("Received: {1:10} bytes from {0}".format(src, dfsum))
+        currentsrctable = pd.DataFrame({
+            "Source": [src],
+            "Bytes_received": [dfsum],
+        })
+        sourcetable = sourcetable.append(currentsrctable)
+
+sourcetable.sort_values(by=['Bytes_received'], inplace=True, ascending=False)
+
 
 ###
 
@@ -157,8 +174,7 @@ for dst in unique_destinations:
 
 desttable.sort_values(by=['Bytes_transfered'], inplace=True, ascending=False)
 
-####
-list_2_remove = ['192.168.0.61', '192.168.0.255', '2601:647:5500:42c1:713d:e934:b8c:730c']
+
 
 def delineator(list_2_remove, desttable):
     for i in list_2_remove:
@@ -171,36 +187,21 @@ def delineator(list_2_remove, desttable):
 desttable = delineator(list_2_remove, desttable)
 
 
+
+def sourceverify(list_2_remove, sourcetable):
+    for i in list_2_remove:
+        mask = sourcetable["Source"] != "{0}".format(i)
+        anewone = sourcetable[mask]
+        sourcetable = anewone
+
+    return sourcetable
+
+sourcetable = sourceverify(list_2_remove, sourcetable)
+
 print(desttable)
+print(sourcetable)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-####
-#
-###
-###
-# Get list containing our current IP's
-###
-local_system_ips = (Convert(local_system_ip))
-ouriplist = list(filter(None,local_system_ips))
-
-print(ouriplist)
-
-#
-#
-#
 #Tidy up.
 
 cmdline("cp /tmp/*csv /home/greenfan/Desktop/")
