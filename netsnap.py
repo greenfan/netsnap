@@ -1,9 +1,17 @@
 #!/usr/bin/python3
 # netsnapshot.py - network monitoring with scapy and python pandas
-# ultimately more resource friendly rework of nethogs
+###
 # Release Version:  0.3.1
 # Revision date: 12/17/19
-
+###
+# netsnappy is a more resource friendly version of nethogs,
+# constructed with scapy and pandas doing the heavy lifting
+###
+###
+# Todos v.3.3 add destination, add filtering based on my_ips, add total received
+# v.4 instead of printing, set them to create a series, and sort by ascending sizes
+# v.5 add more recursion. . .
+#
 from typing import Any, Union
 
 from scapy.all import *
@@ -16,7 +24,7 @@ from subprocess import PIPE, Popen
 #
 #
 #
-# local functions
+# Boiler plate
 def cmdline(command):
     process = Popen(
         args=command,
@@ -24,24 +32,29 @@ def cmdline(command):
         shell=True
     )
     return process.communicate()[0]
-
-#convert our output from local system ip into a usable python list
 def Convert(string):
     li = list(string.split("\n"))
     return li
-
-# local variables
+#
+# end local functions
+#
+# begin local variables
+# undeclared variables are latent bugs
 local_system_ip = cmdline(" ifconfig | grep -i inet | egrep -v \"fe80|::1|127.0.0\" | awk '{  print  $2 }' ").decode('ascii')
 localbroadcast = cmdline("ifconfig | grep broadcast | awk ' { print $6 }'").decode('ascii').strip()
-
-
-
-# define length
 packets = sniff(count=100)
+#
+# end local variables
+#
 
+
+# take the capture
 wrpcap("/tmp/filename2.pcap", packets)
 
 scapy_cap = rdpcap("/tmp/filename2.pcap")
+
+
+
 
 for packet in scapy_cap:
     PT = (packet.type)
@@ -56,7 +69,16 @@ for packet in scapy_cap:
                 "Sourceport": [(packet[IP].sport)],
                 "Size": [(len(packet))],
             })
-        else: print(packet.summary)
+        elif ( proto == 2 ) or ( proto == 1 ):
+
+            df = pd.DataFrame({
+                "Source": [(packet[IP].src)],
+                "Destination": [(packet[IP].dst)],
+                "Sourceport": ["1"],
+                "Destport": ["1"],
+                "Size": [(len(packet))],
+            })
+        else: print("We've got an outlier \n {}").format(packet.summary)
 
     elif PT == 34525:
         proto = (packet[IPv6].nh)
@@ -113,6 +135,58 @@ for src in unique_sources:
         dfsum = pd.DataFrame.sum(dfsize)
         print("Received: {1:10} bytes from {0}".format(src, dfsum))
 
+###
+
+
+desttable = pd.DataFrame({
+    "Destination": [],
+    "Bytes_transfered": [],
+})
+
+for dst in unique_destinations:
+    if dst != "ARP":
+        mask = foobar["Destination"] == "{}".format(dst)
+        df = foobar[mask]
+        dfsize = df["Size"].astype(int)
+        dfsum = pd.DataFrame.sum(dfsize)
+        currenttable = pd.DataFrame({
+            "Destination": [dst],
+            "Bytes_transfered": [dfsum],
+        })
+        desttable = desttable.append(currenttable)
+
+desttable.sort_values(by=['Bytes_transfered'], inplace=True, ascending=False)
+
+####
+list_2_remove = ['192.168.0.61', '192.168.0.255', '2601:647:5500:42c1:713d:e934:b8c:730c']
+
+def delineator(list_2_remove, desttable):
+    for i in list_2_remove:
+        mask = desttable["Destination"] != "{0}".format(i)
+        anewone = desttable[mask]
+        desttable = anewone
+
+    return desttable
+
+desttable = delineator(list_2_remove, desttable)
+
+
+print(desttable)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ####
 #
 ###
@@ -122,6 +196,7 @@ for src in unique_sources:
 local_system_ips = (Convert(local_system_ip))
 ouriplist = list(filter(None,local_system_ips))
 
+print(ouriplist)
 
 #
 #
