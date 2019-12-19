@@ -11,7 +11,6 @@
 # v.4 clean up the list_2_remove and add option to remove broadcasts
 # v.5 add more recursion. . .
 #
-
 from scapy.all import *
 import os
 import sys
@@ -21,8 +20,6 @@ import pandas as pd
 from subprocess import PIPE, Popen
 #
 #
-#
-# Boiler plate
 def cmdline(command):
     process = Popen(
         args=command,
@@ -32,22 +29,21 @@ def cmdline(command):
     return process.communicate()[0]
 def Convert(string):
     li = list(string.split("\n"))
-    return li
-#
-# end local functions
-#
-# begin local variables
-# undeclared variables are latent bugs
-
-#
+    li2 = list(filter(None,li))
+    return li2
 local_system_ip = cmdline(" ifconfig | grep -i inet | egrep -v \"fe80|::1|127.0.0\" | awk '{  print  $2 }' ").decode('ascii')
 localbroadcast = cmdline("ifconfig | grep broadcast | awk ' { print $6 }'").decode('ascii').strip()
-local_system_ips = (Convert(local_system_ip))
-ouriplist = list(filter(None,local_system_ips))
-list_2_remove = ouriplist
+rbc = input('Remove broadcast traffic? (yes/no) ')
+rbc = rbc.lower()
+if rbc == 'yes':
+    list_2_remove = local_system_ip + localbroadcast + '\n239.255.255.240\n' + '224.0.0.251\n' + '224.0.0.255'
+else:
+    list_2_remove = local_system_ip
+    
+list_2_remove = Convert(list_2_remove)
 
-
-packets = sniff(count=100)
+print(list_2_remove)
+packets = sniff(count=1000)
 
 #
 # end local variables
