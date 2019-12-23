@@ -1,16 +1,8 @@
 #!/usr/bin/python3
-# netsnapshot.py - network monitoring with scapy and python pandas
-###
-# Release Version:  0.3.1
-# Revision date: 12/18/19
-###
-# netsnappy is a more resource friendly version of nethogs,
+# netsnap.py - version .5
 # constructed with scapy and pandas doing the heavy lifting
-###
-###
-# v.4 clean up the list_2_remove and add option to remove broadcasts
-# v.5 add more recursion. . .
-#
+# add signal catching
+# fix packetsize
 from scapy.all import *
 import os
 import sys
@@ -19,9 +11,6 @@ import numpy as np
 import pandas as pd
 from subprocess import PIPE, Popen
 
-
-#
-#
 def cmdline(command):
     process = Popen(
         args=command,
@@ -36,7 +25,7 @@ def Convert(string):
     li2 = list(filter(None, li))
     return li2
 
-
+# set local variables
 local_system_ip = cmdline(" ifconfig | grep -i inet | egrep -v \"fe80|::1|127.0.0\" | awk '{  print  $2 }' ").decode(
     'ascii')
 localbroadcast = cmdline("ifconfig | grep broadcast | awk ' { print $6 }'").decode('ascii').strip()
@@ -48,21 +37,19 @@ else:
     list_2_remove = local_system_ip
 
 list_2_remove = Convert(list_2_remove)
-pcapsizeondisk = 0
-#
+pcapsize = 0
+pd.set_option('display.max_rows', 15)
+
 # end local variables
-#
-####
-#####
 
 if __name__ == '__main__':
-    while pcapsizeondisk < 150000:
+    while pcapsize < 1500:
         packets = sniff(count=50)
 
-        # take the capture
         wrpcap("/tmp/filename2.pcap", packets)
 
         scapy_cap = rdpcap("/tmp/filename2.pcap")
+        raw_wire_length = RawPcapNgReader("/tmp/filename2.pcap")
 
         for packet in scapy_cap:
             PT = (packet.type)
@@ -108,16 +95,9 @@ if __name__ == '__main__':
                     "Sourceport": ["ARP"],
                     "Size": ["ARP"],
                 })
-
             df.to_csv('/tmp/fullcapture.csv', mode='a', sep=',', header=False, index=False)
 
-        #
-        #
-        ####add header to fullcapture csv
         foobar = pd.read_csv("/tmp/fullcapture.csv", sep=',', names=['Source', 'Destination', 'Destport', 'Sourceport', 'Size'])
-        ###
-        # Grab unique addresses
-        ###
 
         unique_sources = foobar["Source"]
         unique_sources = unique_sources.drop_duplicates()
@@ -126,9 +106,6 @@ if __name__ == '__main__':
         unique_destinations = foobar["Destination"]
         unique_destinations = unique_destinations.drop_duplicates()
         # print(unique_destinations)
-
-        ###
-
 
         sourcetable = pd.DataFrame({
             "Source": [],
@@ -148,9 +125,6 @@ if __name__ == '__main__':
                 sourcetable = sourcetable.append(currentsrctable)
 
         sourcetable.sort_values(by=['Bytes_received'], inplace=True, ascending=False)
-
-        ###
-
 
         desttable = pd.DataFrame({
             "Destination": [],
@@ -180,7 +154,6 @@ if __name__ == '__main__':
 
             return desttable
 
-
         desttable = delineator(list_2_remove, desttable)
 
 
@@ -195,14 +168,15 @@ if __name__ == '__main__':
 
         sourcetable = sourceverify(list_2_remove, sourcetable)
         os.system('clear')
+        desttable.set_index('Destination', inplace=True)
+        sourcetable.set_index('Source', inplace=True)
         print(desttable)
         print(sourcetable)
-        pcapsizeondisk = os.path.getsize("/tmp/filename2.pcap")
+        pcapsize = pcapsize + 50
 
 # Tidy up.
 
 cmdline("cp /tmp/*csv /home/greenfan/Desktop/")
 cmdline("chmod 777 /home/greenfan/Desktop/*csv")
 print("pcap moved to desktop for deubgging")
-print("clearing temp files. . . ")
 cmdline("rm -rf /tmp/*csv /tmp/*pcap")
