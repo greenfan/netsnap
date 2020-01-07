@@ -9,3 +9,4 @@ Requirements:
 
 ![samplegif.gif](https://raw.githubusercontent.com/greenfan/netsnap/master/samplegif.gif)
 
+Size does not accurately reflect bytes transferred, this project will be rewritten with libpcap
