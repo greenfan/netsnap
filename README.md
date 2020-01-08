@@ -9,4 +9,4 @@ Requirements:
 
 ![samplegif.gif](https://raw.githubusercontent.com/greenfan/netsnap/master/samplegif.gif)
 
-Size does not accurately reflect bytes transferred, this project will be rewritten with libpcap
+netsnap2.py will be based on libpcap and python socket irq and struct to deconstruct data from big endian
