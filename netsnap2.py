@@ -5,23 +5,26 @@ import textwrap
 def main():
     conn = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(3))
     while True:
-        raw_data, addr = conn.recvfrom(65536)
-        eth_proto, data = ethernet_frame(raw_data)
+        raw_data, addr = conn.recvfrom(65535)
+        dest_mac, src_mac, eth_proto, data = ethernet_frame(raw_data)
         version, header_length, ttl, ipv4_src, ipv4_dest, data = ipv4_packet(data)
         framesize = len(raw_data)
-        print(eth_proto)
-        print(ttl)
-        print(ipv4_dest)
-        print(ipv4_src)
-        print(framesize)
+        print("dmac: {} smac: {} source: {} dest: {} size{}\n eth_proto: {}".format(dest_mac, src_mac, ipv4_dest, ipv4_src, framesize, eth_proto))
+
 
 
 
 
 #strip ethernet frame header
 def ethernet_frame(data):
-    framedata, proto = struct.unpack('! 12s H', data[:14])
-    return socket.htons(proto), data[14:]
+    dest_mac, src_mac, proto = struct.unpack('! 6s 6s H', data[:14])
+    return get_mac_addr(dest_mac), get_mac_addr(src_mac), socket.htons(proto), data[14:]
+
+def get_mac_addr(bytes_addr):
+    bytes_str = map('{:02x}'.format, bytes_addr)
+    return ':'.join(bytes_str).upper()
+
+
 
 #unpack IPv4 and IPv6 packet
 def ipv4_packet(data):
@@ -55,7 +58,8 @@ main()
 
 
 """
+eth_protcol #s
 8 = ipv4
 1544 = arp
-
-56710 = weird udp from 192.168.0.24"""
+56710 = ipv6
+4"""
