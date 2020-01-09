@@ -1,8 +1,8 @@
+
 #!/usr/bin/python3
 # netsnap.py - version .5
 # constructed with scapy and pandas doing the heavy lifting
-# add signal catching
-# fix packetsize
+# TODO: replace scapy with libpcap for accurate wirelen data
 from scapy.all import *
 import os
 import sys
@@ -25,6 +25,15 @@ def Convert(string):
     li2 = list(filter(None, li))
     return li2
 
+import signal
+
+def keyboardInterruptHandler(signal, frame):
+    print("KeyboardInterrupt (ID: {}) has been caught. Exiting Immediately.".format(signal))
+    exit(0)
+
+
+
+
 # set local variables
 local_system_ip = cmdline(" ifconfig | grep -i inet | egrep -v \"fe80|::1|127.0.0\" | awk '{  print  $2 }' ").decode(
     'ascii')
@@ -42,8 +51,11 @@ pd.set_option('display.max_rows', 15)
 
 # end local variables
 
+
+signal.signal(signal.SIGINT, keyboardInterruptHandler)
+
 if __name__ == '__main__':
-    while pcapsize < 1500:
+    while pcapsize < 12000:
         packets = sniff(count=50)
 
         wrpcap("/tmp/filename2.pcap", packets)
