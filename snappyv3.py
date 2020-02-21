@@ -2,8 +2,8 @@
 # netsnapv3.py
 # Rewritten using binary from the wire directly, pulls data from IPv4 and IPv6 headers, then parse with Pandas
 # TODO:
-#       pull size from packet payload instead of wirelen, add MAC and TCP/UDP data to tables
-#       add DNS intercept
+#       add DNS resolution
+#       add dns query captures
 #       enhace CLI output
 import socket
 import struct
@@ -218,19 +218,3 @@ signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
 
 main()
-
-
-
-
-
-
-
-
-
-
-"""
-eth_protcol #s
-8 = ipv4
-1544 = arp
-56710 = ipv6
-4"""
